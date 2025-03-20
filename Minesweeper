@@ -1,30 +1,235 @@
 import java.util.*;
 
-public class Main {
+ class Minesweeper {
+    private static final int BEGINNER_ROWS = 9;
+    private static final int BEGINNER_COLS = 9;
+    private static final int BEGINNER_MINES = 10;
+
+    private static final int INTERMEDIATE_ROWS = 16;
+    private static final int INTERMEDIATE_COLS = 16;
+    private static final int INTERMEDIATE_MINES = 40;
+
+    private static final int EXPERT_ROWS = 16;
+    private static final int EXPERT_COLS = 30;
+    private static final int EXPERT_MINES = 99;
+
+    private int rows;
+    private int cols;
+    private int mines;
+    private int[][] grid;
+    private boolean[][] revealed;
+    private boolean[][] flagged;
+    private boolean gameOver;
+
+    public Minesweeper(int rows, int cols, int mines) {
+        this.rows = rows;
+        this.cols = cols;
+        this.mines = mines;
+        this.grid = new int[rows][cols];
+        this.revealed = new boolean[rows][cols];
+        this.flagged = new boolean[rows][cols];
+        this.gameOver = false;
+        initializeGrid();
+    }
+
+    private void initializeGrid() {
+        // Place mines randomly
+        Random random = new Random();
+        int minesPlaced = 0;
+        while (minesPlaced < mines) {
+            int row = random.nextInt(rows);
+            int col = random.nextInt(cols);
+            if (grid[row][col] != -1) {
+                grid[row][col] = -1; // -1 represents a mine
+                minesPlaced++;
+            }
+        }
+
+        // Calculate adjacent mines for each cell
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (grid[i][j] != -1) {
+                    grid[i][j] = countAdjacentMines(i, j);
+                }
+            }
+        }
+    }
+
+    private int countAdjacentMines(int row, int col) {
+        int count = 0;
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                if (i == 0 && j == 0) continue;
+                int newRow = row + i;
+                int newCol = col + j;
+                if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols && grid[newRow][newCol] == -1) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    public void revealCell(int row, int col) {
+        if (flagged[row][col] || revealed[row][col]) {
+            return;
+        }
+        revealed[row][col] = true;
+        if (grid[row][col] == -1) {
+            gameOver = true;
+            System.out.println("Game Over! You hit a mine.");
+            revealAllMines();
+        } else if (grid[row][col] == 0) {
+            revealAdjacentCells(row, col);
+        }
+    }
+
+    private void revealAdjacentCells(int row, int col) {
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                if (i == 0 && j == 0) continue;
+                int newRow = row + i;
+                int newCol = col + j;
+                if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols && !revealed[newRow][newCol]) {
+                    revealCell(newRow, newCol);
+                }
+            }
+        }
+    }
+
+    public void flagCell(int row, int col) {
+        if (!revealed[row][col]) {
+            flagged[row][col] = !flagged[row][col];
+        }
+    }
+
+    private void revealAllMines() {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (grid[i][j] == -1) {
+                    revealed[i][j] = true;
+                }
+            }
+        }
+    }
+
+    public boolean isGameOver() {
+        return gameOver;
+    }
+
+    public boolean isWin() {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (grid[i][j] != -1 && !revealed[i][j]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public void displayGrid() {
+        System.out.print("  |");
+        for (int j = 0; j < cols; j++) {
+            System.out.print(" " + (j + 1) + " |");
+        }
+        System.out.println();
+        if(cols==9){
+            System.out.println("-----------------------------------------");
+        }
+        if(cols==16){
+            System.out.println("--------------------------------------------------------------------------");
+        }
+        if(cols==30){
+            System.out.println("----------------------------------------------------------------------------------------------------------------------------------------------------");
+        }
+        for (int i = 0; i < rows; i++) {
+            System.out.print((i + 1) + " |");
+            for (int j = 0; j < cols; j++) {
+                if (flagged[i][j]) {
+                    System.out.print(" F |");
+                } else if (!revealed[i][j]) {
+                    System.out.print("   |");
+                } else if (grid[i][j] == -1) {
+                    System.out.print(" B |");
+                } else {
+                    System.out.print(" " + grid[i][j] + " |");
+                }
+            }
+            System.out.println();
+            if(cols==9){
+                System.out.println("-----------------------------------------");
+            }
+            if(cols==16){
+                System.out.println("--------------------------------------------------------------------------");
+            }
+            if(cols==30){
+                System.out.println("----------------------------------------------------------------------------------------------------------------------------------------------------");
+            }
+
+
+        }
+    }
+
     public static void main(String[] args) {
         Scanner input = new Scanner(System.in);
-        HashMap<Integer, Integer> map = new HashMap<>();
-        ArrayList<Integer> mines = new ArrayList<>();
-for(int i=0; i<10; i++){
-    mines.add(9);
-}
-for(int i=0; i<71; i++){
-    mines.add(0);
-}
-Collections.shuffle(mines);
-     for(int i=0; i<81; i++){
+        System.out.println("Welcome to Minesweeper!");
+        System.out.println("Choose a difficulty level:");
+        System.out.println("1. Beginner (9x9 grid with 10 mines)");
+        System.out.println("2. Intermediate (16x16 grid with 40 mines)");
+        System.out.println("3. Expert (16x30 grid with 99 mines)");
+        System.out.print("Enter your choice: ");
+        int choice = input.nextInt();
 
-         map.put(i, mines.get(i));
+        Minesweeper game;
+        switch (choice) {
+            case 1:
+                game = new Minesweeper(BEGINNER_ROWS, BEGINNER_COLS, BEGINNER_MINES);
+                break;
+            case 2:
+                game = new Minesweeper(INTERMEDIATE_ROWS, INTERMEDIATE_COLS, INTERMEDIATE_MINES);
+                break;
+            case 3:
+                game = new Minesweeper(EXPERT_ROWS, EXPERT_COLS, EXPERT_MINES);
+                break;
+            default:
+                System.out.println("Invalid choice. Starting Beginner level.");
+                game = new Minesweeper(BEGINNER_ROWS, BEGINNER_COLS, BEGINNER_MINES);
+                break;
+        }
 
-     }
-     System.out.print("  | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |");
-     for(int i=0; i<9; i++){
-         System.out.println();
-         System.out.println("-----------------------------------------");
-         System.out.print( i+1 + " |");
-         for(int j=0; j<9; j++){
-             System.out.print(" " + mines.get(i*9+j) + " |");
-         }
-     }
+        System.out.println("Generating Minesweeper grid...");
+        System.out.println("Game started! Good luck!");
+        System.out.println("Commands:");
+        System.out.println("- Uncover Cell: u row col");
+        System.out.println("- Flag Cell: f row col");
+
+        while (!game.isGameOver() && !game.isWin()) {
+            game.displayGrid();
+            System.out.print("Enter your command: ");
+            String command = input.next();
+            int row = input.nextInt() - 1;
+            int col = input.nextInt() - 1;
+
+            if (command.equals("u")) {
+                game.revealCell(row, col);
+            } else if (command.equals("f")) {
+                game.flagCell(row, col);
+            } else {
+                System.out.println("Invalid command. Please try again.");
+            }
+        }
+
+        if (game.isWin()) {
+            System.out.println("Congratulations! You have uncovered all safe cells!");
+        }
+
+        System.out.print("Play again? (Y/N): ");
+        String playAgain = input.next();
+        if (playAgain.equalsIgnoreCase("Y")) {
+            main(args);
+        } else {
+            System.out.println("Thank you for playing Minesweeper!");
+        }
     }
 }
